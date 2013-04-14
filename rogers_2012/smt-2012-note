@@ -1,0 +1,63 @@
+From rfreund@email.arizona.edu Fri Sep  7 14:52:10 2012
+Date: Fri, 7 Sep 2012 11:51:40 -0700 (MST)
+From: Robert Freund <rfreund@email.arizona.edu>
+To: Vincent Fish <vfish@haystack.mit.edu>
+Cc: Robert Freund <rfreund@as.arizona.edu>
+Subject: Re: SMT RCP and LCP sensitivities
+
+Vincent,
+
+Please find attached the system temperatures as recorded (measured) in
+the SDD data file.  The variation between LCP and RCP is on the order
+of a few percent.  This doesn't help to explain the large LL/RR results.
+
+Tom wrote a special script that uses a utility he has to extract system
+temperature information from each scan in the 2796 through 3363 range
+from the SDD file.  The attached file has five columns; scan number, H-Pol
+(RCP) LSB Tsys (K), H-Pol (RCP) USB Tsys (K), V-Pol (LCP) LSB Tsys (K),
+and V-Pol (LCP) USB Tsys (K).
+
+Were any "Cold Cal" measurements taken?  A "Cold Cal" result references the
+temperature scale back to the physical temperature of LN.
+
+The data must be correct but I'm concerned that it looks TOO good!  There
+are 4 mixers and 4 LNAs in the 2 sideband separating mixers and yet the
+system temperature ratios for the first scan across polarizations and
+sidebands are less than 3.6%.  Could we be that good?  Receiver temperatures
+are in the approximate range of 60 - 70 K.  We could investigate the
+system temperature values further if you think it's necessary.
+
+
+Thanks,
+Robert
+
+
+
+On Thu, 6 Sep 2012, Vincent Fish wrote:
+
+> Hi Bob,
+>
+> I've been looking at some of the March 2012 EHT data, including scans where 
+> the SMA flipped its polarization briefly.  I notice that the RR correlation 
+> coefficients on the SMT-SMA baseline are lower than the LL correlation 
+> coefficients.  This is consistent with a similar finding on a much larger 
+> number of scans between the SMT and CARMA.  (see attached memo)
+>
+> Is there any reason to believe that the LCP and RCP receiver systems at the 
+> SMT were substantially different in March 2012?  Is there a noticeable 
+> difference in the effective gain of the two systems?  Did the RCP receiver 
+> have a much larger system temperature?
+>
+> Any thoughts you may have on this matter would be helpful, as figuring out 
+> the amplitudes will be important for interpreting both the polarization and 
+> Stokes I results.
+>
+> Gracias,
+> 							Vincent
+>
+
+!DSPAM:504a425a100038560419662!
+
+
+    [ Part 2, ""  Text/PLAIN (Name: "vlbi.tsys") ~29 KB. ]
+    [ Unable to print this part. ]

@@ -1,0 +1,121 @@
+Data Files
+----------
+sdd.gbc_002 : the sdd file from the March 2012 experiment
+totalpower.dat : a list of times, scans, and power(?) per channel
+operator.log : list of observed scans, Tsys, etc.
+
+Program Files
+-------------
+check_sdd : an SMT program to spit out the sdd data as text
+analyze-sddtext.c : collates possibly useful info for each scan
+alan-sdd.c : a program Alan wrote, but not for the included sdd file
+
+Reference File
+--------------
+sdd_file_format.pdf : a description of the sdd file format
+
+Other Files
+-----------
+smt-2012-note : an e-mail exchange with Bob Freund...
+smt-2012-vlbi.tsys : ...and the Tsys file referenced therein
+
+
+SMT Scan Types
+--------------
+There are several different scan types, of which the most important
+are listed below.
+
+CONTSEQ: A scan of on-offs with the subreflector nutating.  A sequence
+scan has multiples of eight subscans.  I think the ons are subscans 1,
+2, 4, and 7 mod 8 (starting at 0); this can be checked by looking at
+the data on a bright source, where the ons should be slightly but
+noticeably higher than the offs.
+
+CONTFIVE: A scan used to make pointing corrections.  This is basically
+five CONTSEQ's, where only the middle one is actually centered on the
+source.
+
+CONTQK5: Another pointing scan like a CONTFIVE.
+
+CONTCOLD: A cold cal scan.  There should be three segments of data
+corresponding to "hot" (room temperature absorber), "cold" (liquid
+nitrogen), and "sky".
+
+CONTCAL: A cal scan with a "hot" segment and a "sky" segment.
+
+VLBI: The actual VLBI scans, where the telescope tracks the source
+without doing position switching or anything fancy.  Because there are
+no offs, the data in the sdd file are not really useful during a VLBI
+scan.
+
+There should be 4 channels of data in all cases, corresponding to the
+four combinations of polarization and sideband.
+
+Note that the file operator.log drops the "CONT" in the scan type.
+You'll also see two types of focus scans (FOC and NSFC), which are
+best ignored.
+
+
+Tsys
+----
+
+In between VLBI scans, the telescope does combinations of CAL scans,
+sequences, and pointings.  The CAL scans don't show up in operator.log
+but do update Tsys (as do a couple of the other types that use the hot
+absorber).  This is why Tsys numbers in operator.log aren't
+necessarily updated every scan (and not for the VLBI scans).
+
+There are two Tsys columns.  The operator can choose 2 of the 4
+combinations normally labelled HPOL/VPOL LSB/USB.  The QWP changes
+from linear to circular basis, of course.
+
+The file totalpower.dat keeps track of the power (or is it really
+voltages?) per channel.  Columns are time, scan type, scan number, and
+then eight more columns, two per channel (L/R LSB/USB), the first of
+which is relevant.  The data aren't directly useful for computing
+source flux densities because totalpower.dat doesn't keep track of the
+on/off status.  Nevertheless, the totalpower values are highly
+correlated with the system temperature, which especially at the low
+elevations we often observe at is dominated by the contribution from
+the sky.  Kazunori Akiyama has looked into using this fact to improve
+Tsys estimates during the VLBI scans.  If you're interested in
+pursuing this route, please contact him directly (
+kazunori.akiyama@nao.ac.jp ), as he probably has written some software
+utilities.  This method can theoretically improve our Tsys estimates
+on VLBI scans on the level of a few percent (perhaps somewhat more
+when the opacity and/or elevation is highly variable), although it
+won't solve the broader issue of the difference between the SEFDs of
+the two polarizations.
+
+
+Telescope gain and flux densities
+---------------------------------
+
+There are two related unresolved issues here.  First, can we calculate
+the gain of the SMT, preferably in each polarization separately, and,
+if so, is it stable with time?  Second, can we use the CONTSEQ scans
+to calculate the flux densities of any of our sources?
+
+The file alan-sdd.c is a program Alan Rogers wrote a few years back
+for a different observing run (i.e., it won't be directly useful for
+the current sdd file) to try to calculate the gain of the SMT based on
+observations of Saturn.  As far as I know it is the only gain estimate
+we have for the SMT.  It is several years old, and we've been making
+the (almost assuredly incorrect) assumption that the telescope gain is
+stable with time and elevation.
+
+In principle the sequence scans can be used to measure the flux
+densities of our sources (or, if we think we know from other
+telescopes what those flux densities are, to check on the telescope
+gains).  I've tried extracting on/off and hot/cold/sky values from the
+sdd files, but I've never been able to make much sense of the data
+afterward.
+
+In a previous year we spent much of the telescope's non-VLBI time
+doing repeated sequences on a bunch of sources in the hopes that we'd
+later be able to reduce the data to obtain good estimates of the
+source flux densities.  If it is possible to make sense of the sdd
+data, we should resume this procedure in 2013 and future years.  It
+would be ideal if you could make progress on this front, although it's
+possible that the data are simply too noisy, corrupted, or otherwise
+not optimized for continuum flux density measurements to be useful.
