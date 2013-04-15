@@ -104,12 +104,18 @@ class sddindex:
             phs=512
        
         code = self.mode - phs
+        
+        #this look-up table is on page 4 of the sdd file format pdf
+        #assume it is valid for every telescope
         lut=['','PS','APS','FS','BSP','TPON','TPOF','ATP','PSM','APM',\
             'FSM','TPMO','TPMF','DRF','PCAL','BCAL','BLNK','SEQ',\
             'FIVE','MAP','FOC','NSFC','TTIP','STIP','DON','CAL','FSPS',\
             'BSPS','ZERO','TLPW','FQSW','NOCL','PLCL','ONOF','BMSW',\
             'PSSW','DRFT','OTF','SON','SOF','QK5','QK5A','PSS1','VLBI',\
             'PZC','CPZM','PSPZ','CPZ1','CPZ2']
+
+        #some scans in test data have code not in lut, set to 0 
+        #which means "No mode present". Possible bug.
         if code >= len(lut):
             retval = lut[0]
         else:
@@ -166,6 +172,7 @@ class sddscan:
                 jj += 1
                 new_code=format_string[len(word_codes):len(word_codes)+jj]
             if new_code[0].isdigit():
+                #get the numbers from the new code and calc # of words
                 new_words_found = int(filter(str.isdigit,new_code))/8
             else:
                 new_words_found = 1
