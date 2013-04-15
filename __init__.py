@@ -130,13 +130,22 @@ class sddscan:
         #each class header has a variety of different data in it
         #these strings are for the ARO SMT. Specifically some of the
         #later ones could be different for different telescopes.
+        #format doc also suggests that the class headers could be
+        #*longer* than specified in the document. This is not currently
+        #handled.
         format_strings = ['ddd8s16s8s8s16s8s8s8s8sddd', \
-            'dddddddddddd8s','dddddddd8sd','dddddddddddddddd8s',\
-            'dddddd','dddddddddd8s','ddddd8s8s','ddddd',\
+            'dddddddddddd8s',\
+            'dddddddd8sd',\
+            'dddddddddddddddd8s',\
+            'dddddd',\
+            'dddddddddd8s',\
+            'ddddd8s8s',\
+            'ddddd',\
             'ddddddddddddddddddddddddd',\
             '8s8s8s8s8s8s8s8s8s8s',\
             'ddddddddddddddd16sddddddddddddddddddd',\
-            'dddddddddddddddddddd8sd16s','ddddddd' ]
+            'dddddddddddddddddddd8sd16s',\
+            'ddddddd' ]
 
         startword = self.startword[classnum]
         stopword = self.startword[classnum+1]
@@ -148,14 +157,20 @@ class sddscan:
         #may not use all the available words in a header. include
         #as many as the preamble records tell you are used
         while words_found < nwords:
-            jj=1
-            word_codes = format_string[0:len(word_codes)+1]
-            while word_codes[-1].isdigit() is True:
-                word_codes = format_string[0:(len(word_codes)+1)]
-                jj+=1
-            if jj > 2:
-                words_found+=(jj-2)
-            words_found+=1
+            jj=1 #number of steps in the format string
+            new_code = format_string[len(word_codes):len(word_codes)+jj]
+
+            #double strings are one character 'd'
+            #character strings are either '8s','16s','24s', etc.
+            while new_code[-1].isdigit() is True:
+                jj += 1
+                new_code=format_string[len(word_codes):len(word_codes)+jj]
+            if new_code[0].isdigit():
+                new_words_found = int(filter(str.isdigit,new_code))/8
+            else:
+                new_words_found = 1
+            word_codes  += new_code
+            words_found += new_words_found
 
         res = unpack(word_codes,content[start:start+8*(nwords)])
      
