@@ -1,11 +1,9 @@
 #!/usr/bin/python
-import sys
 from struct import unpack
 
 class sddfile:
     def __init__(self,fn):
         self.fn = fn
-        self.sizeofint = 4
         self.index = []
         self.scans = []
         
@@ -15,7 +13,7 @@ class sddfile:
         self.filesize = len(self.content)
  
         #the bootstrap takes something like 32 bytes worth of 
-        #useful info
+        #useful info. don't know if this is universal.
         start = 0
         stop = 32
 
@@ -26,7 +24,7 @@ class sddfile:
         #end of bootstrap
         stop = self.bootstrap.bytes_per_rec
         
-        #read in index for each scan
+        #read in each index
         for i in range(self.bootstrap.num_used):
             start = stop
             stop = stop + self.bootstrap.bytes_per_index
@@ -34,27 +32,30 @@ class sddfile:
             self.index.append(sddindex(res))
 
         #read in each scan
+        #scan has preamble, header, then data
         for i in range(self.bootstrap.num_used):
             #compute where the scan preamble is and read it
             start = (self.index[i].start_rec-1)*self.bootstrap.bytes_per_rec
             stop =  start+32
             res = unpack('h'*16,self.content[start:stop])
             self.scans.append(sddscan(res))
-            #print res
 
             #the next double has the length of the overall header, which
             #comes after the preamble
             start = (self.index[i].start_rec-1)*self.bootstrap.bytes_per_rec
-            #skip the preamble
             nclass = len(self.scans[i].startword)
             for j in range(nclass):
                 if self.scans[i].startword[j] == 0: 
+                    #not all classes have to be included in a given file
+                    #only thirteen are mandatory out of a possible 15
                     continue
                 startbyte = start+8*(self.scans[i].startword[j]-1)
                 stopbyte = startbyte+8*(self.scans[i].startword[j+1])
                 if j == 12:
+                    #this is a kludge to get the code to read the
+                    #header info for the 13th class in sample ARO data
                     stopbyte = startbyte+8*7
-                nwords = (stopbyte-startbyte)/8
+ 
                 self.scans[i].unpack_class(j,startbyte,self.content)
         
         
@@ -92,6 +93,9 @@ class sddindex:
         self.pad = tup[13]
 
     def decode_poscode(self):
+        #different scan types are coded differently. this function
+        #provides a lookup table so that the coded value can be
+        #transferred to a human-readable one
         if self.mode < 512:
             obstype='cont'
             phs=256
@@ -114,6 +118,8 @@ class sddindex:
         
 class sddscan:      
     def __init__(self,tup):
+        #constructor initializes the ssdscan object with information
+        #from the SDD preamble
         self.numclass = tup[0]
         self.startword = []
         self.classes = []
@@ -121,6 +127,9 @@ class sddscan:
             self.startword.append(tup[i])
 
     def unpack_class(self,classnum,start,content):
+        #each class header has a variety of different data in it
+        #these strings are for the ARO SMT. Specifically some of the
+        #later ones could be different for different telescopes.
         format_strings = ['ddd8s16s8s8s16s8s8s8s8sddd', \
             'dddddddddddd8s','dddddddd8sd','dddddddddddddddd8s',\
             'dddddd','dddddddddd8s','ddddd8s8s','ddddd',\
@@ -128,13 +137,16 @@ class sddscan:
             '8s8s8s8s8s8s8s8s8s8s',\
             'ddddddddddddddd16sddddddddddddddddddd',\
             'dddddddddddddddddddd8sd16s','ddddddd' ]
-        #print "unpacking class " + str(classnum)
+
         startword = self.startword[classnum]
         stopword = self.startword[classnum+1]
         nwords = stopword-startword
         format_string = format_strings[classnum]
         word_codes = ''
         words_found=0
+
+        #may not use all the available words in a header. include
+        #as many as the preamble records tell you are used
         while words_found < nwords:
             jj=1
             word_codes = format_string[0:len(word_codes)+1]
@@ -144,5 +156,6 @@ class sddscan:
             if jj > 2:
                 words_found+=(jj-2)
             words_found+=1
+
         res = unpack(word_codes,content[start:start+8*(nwords)])
      
