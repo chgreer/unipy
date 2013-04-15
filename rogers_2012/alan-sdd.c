@@ -55,7 +55,7 @@ float sdata[2048];
  for(i=0;i<argc;i++){
   sscanf(argv[i], "%79s", buf);
   if (strstr(buf, "-mode")) { sscanf(argv[i+1], "%d",&mode);}
-       }
+ }
     if ((file1 = fopen(fname, "r")) == NULL) {
         printf("cannot open file:%s\n", fname);
         return 0;
@@ -71,23 +71,23 @@ float sdata[2048];
              bt.numrec,bt.numdata,bt.bytes_per_rec,bt.bytes_per_index,bt.num_used,bt.counter,bt.sddtyp,bt.sddver,bt.pad[0]);
     i=0;
     while(!feof(file1) && i < bt.numrec){
-    fread(&in,64,1,file1);
-//    printf("i %d start %d stop %d source %.6s obscode %d\n",i,in.scanstart,in.scanstop,in.scan,in.mode-256);
-         fclose(file1);
-      if ((file1 = fopen(fname, "r")) == NULL) {
-        printf("cannot open file:%s\n", fname);
-        return 0;
-       }
-     for(j=0;j<in.scanstart-1;j++) fread(data,512,1,file1);
-      fread(&sc,32,1,file1);
-      fread(data,8,1,file1);
-      hlen = data[0];
-//printf("hlen %d sc.classstart[0] %d\n",hlen,sc.classstart[0]);
-      fread(&data[1],hlen-8-32,1,file1);
-                 hr = (int)(data[sc.classstart[2]-5+1]);
-                 min = (data[sc.classstart[2]-5+1] - hr)*60.0;
-                 dlen = data[sc.classstart[0]-5+1];
-      printf("%9.4f %02d:%02d %.8s scan %3.0f tsys %3.0f tamb %3.0f opac %5.3f el %3.0f %.8s %.8s\n",
+        fread(&in,64,1,file1);
+        //printf("i %d start %d stop %d source %.6s obscode %d\n",i,in.scanstart,in.scanstop,in.scan,in.mode-256);
+        fclose(file1);
+        if ((file1 = fopen(fname, "r")) == NULL) {
+            printf("cannot open file:%s\n", fname);
+            return 0;
+        }
+        for(j=0;j<in.scanstart-1;j++) fread(data,512,1,file1);
+        fread(&sc,32,1,file1);
+        fread(data,8,1,file1);
+        hlen = data[0];
+        //printf("hlen %d sc.classstart[0] %d\n",hlen,sc.classstart[0]);
+        fread(&data[1],hlen-8-32,1,file1);
+        hr = (int)(data[sc.classstart[2]-5+1]);
+        min = (data[sc.classstart[2]-5+1] - hr)*60.0;
+        dlen = data[sc.classstart[0]-5+1];
+        printf("%9.4f %02d:%02d %.8s scan %3.0f tsys %3.0f tamb %3.0f opac %5.3f el %3.0f %.8s %.8s\n",
 	     data[sc.classstart[2]-5],     // yyyy.mmdd
 	     hr,min,
 	     in.scan,                      // source name
