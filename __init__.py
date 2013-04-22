@@ -2,8 +2,9 @@
 from struct import unpack
 
 class sddfile:
-    def __init__(self,fn):
+    def __init__(self,fn,telescope):
         self.fn = fn
+        self.telescope = telescope.lower()
         self.index = []
         self.scans = []
         
@@ -56,11 +57,12 @@ class sddfile:
                     #header info for the 13th class in sample ARO data
                     stopbyte = startbyte+8*7
  
-                self.scans[i].unpack_class(j,startbyte,self.content)
-        
+                self.scans[i].unpack_header(j,startbyte,self.content)
         
 class sddbootstrap:
-    #class containing the bootstrap info
+    """
+    class containing the bootstrap info
+    """
     def __init__(self,tup,content):
         self.numrec  = tup[0]
         self.numdata = tup[1]
@@ -74,7 +76,9 @@ class sddbootstrap:
         self.pad = unpack("i" * pad_size,content[32:self.bytes_per_rec])
 
 class sddindex:
-    #class containing the SDD file index info
+    """
+    class containing the SDD file index info
+    """
     def __init__(self,tup):
         self.start_rec = tup[0]
         self.stop_rec = tup[1]
@@ -93,9 +97,11 @@ class sddindex:
         self.pad = tup[13]
 
     def decode_poscode(self):
-        #different scan types are coded differently. this function
-        #provides a lookup table so that the coded value can be
-        #transferred to a human-readable one
+        """
+        different scan types are coded differently. this function
+        provides a lookup table so that the coded value can be
+        transferred to a human-readable one
+        """
         if self.mode < 512:
             obstype='cont'
             phs=256
@@ -124,39 +130,29 @@ class sddindex:
         
 class sddscan:      
     def __init__(self,tup):
-        #constructor initializes the ssdscan object with information
-        #from the SDD preamble
+        """
+        constructor initializes the ssdscan object with information
+        from the SDD preamble
+        """
         self.numclass = tup[0]
         self.startword = []
-        self.classes = []
+        self.header = {}
         for i in range(1,16):
             self.startword.append(tup[i])
 
-    def unpack_class(self,classnum,start,content):
-        #each class header has a variety of different data in it
-        #these strings are for the ARO SMT. Specifically some of the
-        #later ones could be different for different telescopes.
-        #format doc also suggests that the class headers could be
-        #*longer* than specified in the document. This is not currently
-        #handled.
-        format_strings = ['ddd8s16s8s8s16s8s8s8s8sddd', \
-            'dddddddddddd8s',\
-            'dddddddd8sd',\
-            'dddddddddddddddd8s',\
-            'dddddd',\
-            'dddddddddd8s',\
-            'ddddd8s8s',\
-            'ddddd',\
-            'ddddddddddddddddddddddddd',\
-            '8s8s8s8s8s8s8s8s8s8s',\
-            'ddddddddddddddd16sddddddddddddddddddd',\
-            'dddddddddddddddddddd8sd16s',\
-            'ddddddd' ]
-
+    def unpack_header(self,classnum,start,content):
+        """
+        each class header has a variety of different data in it
+        these strings are for the ARO SMT. Specifically some of the
+        later ones could be different for different telescopes.
+        format doc also suggests that the class headers could be
+        *longer* than specified in the document. This is not currently
+        handled.
+        """
         startword = self.startword[classnum]
         stopword = self.startword[classnum+1]
         nwords = stopword-startword
-        format_string = format_strings[classnum]
+        format_string = self.get_format_string('smt',classnum)
         word_codes = ''
         words_found=0
 
@@ -180,4 +176,75 @@ class sddscan:
             words_found += new_words_found
 
         res = unpack(word_codes,content[start:start+8*(nwords)])
-     
+        key_dict = self.get_key_dict('smt',classnum)
+        for ii in range(len(res)):  
+            self.header[key_dict[ii]] = res[ii]
+
+    def get_format_string(self,telescope,classnum):
+        if telescope=='smt':
+            format_string =  \
+                [ 'ddd8s16s8s8s16s8s8s8s8sddd', \
+                'dddddddddddd8s',\
+                'dddddddd8sd',\
+                'dddddddddddddddd8s',\
+                'dddddd',\
+                'dddddddddd8s',\
+                'ddddd8s8s',\
+                'ddddd',\
+                'ddddddddddddddddddddddddd',\
+                '8s8s8s8s8s8s8s8s8s8s',\
+                'ddddddddddddddd16sddddddddddddddddddd',\
+                'dddddddddddddddddddd8sd16s',\
+                'ddddddd' ]
+        else:
+            print "NO RECOGNIZED FORMAT STRING FOR TELESCOPE ",telescope
+            format_string = [];
+
+        return format_string[classnum];
+
+    def get_key_dict(self,telescope,classnum):
+        if telescope=='smt':
+            key_dict = { \
+                0: ['headlen','datalen','scan','obsid','observer','telescop',\
+                   'projid','object','obsmode','frontend','backend','precis'],\
+                1: ['xpoint','ypoint','uxpnt','uypnt','ptcon0','ptcon1',\
+                    'ptcon2','ptcon3','orient','focusr','focusv','focush',\
+                    'pt_model'],\
+                2: ['utdate','ut','lst','norchan','noswvar','nophase',\
+                    'cycllen','samprat','cl11type'],\
+                3: ['epoch','xsource','ysource','xref','yref','epocra',\
+                    'epocdec','gallong','gallat','az','el','indx','indy',\
+                    'desorg0','desorg1','desorg2','coordcd'],\
+                4: ['tamb','pressure','humidity','refrac','dewpt','mmh2o'],\
+                5: ['scanang','xzero','yzero','deltaxr','deltayr','nopts',\
+                    'noxpts','noypts','xcell0','ycell0','frame'],\
+                6: ['bfwhm','offscan','badchv','rvsys','velocity','veldef',\
+                    'typecal'],\
+                7: ['appeff','beameff','antgain','etal','etafss'],\
+                8: ['synfreq','lofact','harmonic','loif','firstif','razoff',\
+                    'reloff','bmthrow','bmorent','baseoff','obstol',\
+                    'sideband','wl','gains','pbeam0','pbeam1','mbeam0',\
+                    'mbeam1','sroff0','sroff1','sroff2','sroff3','foffsig',\
+                    'foffref1','foffref2'],\
+                9: ['openpar0','openpar1','openpar2','openpar3','openpar4',\
+                    'openpar5','openpar6','openpar7','openpar8','openpar9'],\
+                10: ['current_disk','bologain','sptip_start','sptip_stop',\
+                    'ramp_up','tatms','taus','taui','tatmi','tchop','tcold',\
+                    'gaini','count0','count1','count2','linename','refpt_vel',\
+                    'tip_humid','tip_ref_flag','refract_45','ref_correct',\
+                    'beam_num','burn_time','parallactic','az_offset',\
+                    'el_offset','spares040','spares041','spares042',\
+                    'spares050','spares051','spares052','spares053',\
+                    'spares054','spares055'],\
+                11: ['obsfreq','restfreq','freqres','bw','trx','tcal','stsys',\
+                    'rtsys','tsource','trms','refpt','x0','deltax','inttime',\
+                    'noint','spn','tauh20','th20','tauo2','to2','polariz',\
+                    'effint','rx_info'],\
+                12: ['nostac','fscan','lscan','lamp','lwid','ili','rms']
+            }
+        else:
+            print "NO RECOGNIZED KEYDICT STRING FOR TELESCOPE ",telescope
+            key_dict = {};
+
+        return key_dict[classnum]
+
