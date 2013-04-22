@@ -11,4 +11,4 @@ Example script:
 
     fn='uniPY/rogers_2012/sdd.gbc_002'
 
-    info = upy.sddfile(fn)
+    info = upy.sddfile(fn,'smt')
