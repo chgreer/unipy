@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from struct import unpack
+import numpy as np
 
 class sddfile:
     def __init__(self,fn,telescope):
@@ -26,38 +27,22 @@ class sddfile:
         stop = self.bootstrap.bytes_per_rec
         
         #read in each index
-        for i in range(self.bootstrap.num_used):
+        for ii in range(self.bootstrap.num_used):
             start = stop
             stop = stop + self.bootstrap.bytes_per_index
             res = unpack('iiff16sffdffhhhh',self.content[start:stop])
             self.index.append(sddindex(res))
 
-        #read in each scan
-        #scan has preamble, header, then data
-        for i in range(self.bootstrap.num_used):
-            #compute where the scan preamble is and read it
+        #read in each scan: has preamble, header, then data
+        #preamble 32 bytes of data followed by zeros to length of one record
+        #header and datalength are contained in the header
+        for ii in range(self.bootstrap.num_used):
             start = (self.index[i].start_rec-1)*self.bootstrap.bytes_per_rec
             stop =  start+32
             res = unpack('h'*16,self.content[start:stop])
             self.scans.append(sddscan(res))
-
-            #the next double has the length of the overall header, which
-            #comes after the preamble
-            start = (self.index[i].start_rec-1)*self.bootstrap.bytes_per_rec
-            nclass = len(self.scans[i].startword)
-            for j in range(nclass):
-                if self.scans[i].startword[j] == 0: 
-                    #not all classes have to be included in a given file
-                    #only thirteen are mandatory out of a possible 15
-                    continue
-                startbyte = start+8*(self.scans[i].startword[j]-1)
-                stopbyte = startbyte+8*(self.scans[i].startword[j+1])
-                if j == 12:
-                    #this is a kludge to get the code to read the
-                    #header info for the 13th class in sample ARO data
-                    stopbyte = startbyte+8*7
- 
-                self.scans[i].unpack_header(j,startbyte,self.content)
+            self.scans[i].unpack_header(start,self.content)
+            self.scans[i].unpack_data(start,self.content)
         
 class sddbootstrap:
     """
@@ -137,10 +122,12 @@ class sddscan:
         self.numclass = tup[0]
         self.startword = []
         self.header = {}
+        self.data = np.array([])
+
         for i in range(1,16):
             self.startword.append(tup[i])
 
-    def unpack_header(self,classnum,start,content):
+    def unpack_header(self,start,content):
         """
         each class header has a variety of different data in it
         these strings are for the ARO SMT. Specifically some of the
@@ -149,38 +136,71 @@ class sddscan:
         *longer* than specified in the document. This is not currently
         handled.
         """
-        startword = self.startword[classnum]
-        stopword = self.startword[classnum+1]
-        nwords = stopword-startword
-        format_string = self.get_format_string('smt',classnum)
-        word_codes = ''
-        words_found=0
+        for classnum in range(self.numclass):
+            if self.startword[classnum] == 0: 
+                #not all classes have to be included in a given file
+                #only thirteen are mandatory out of a possible 15
+                continue
+            startbyte = start+8*(self.startword[classnum]-1)
+            stopbyte = startbyte+8*(self.startword[classnum+1])
+            if classnum == 12:
+                #this is a kludge to get the code to read the
+                #header info for the 13th class in sample ARO data
+                stopbyte = startbyte+8*7
+            #self.scans[i].unpack_header(start,self.content)
+        
+            startword = self.startword[classnum]
+            stopword = self.startword[classnum+1]
+            nwords = stopword-startword
+            format_string = self.get_format_string('smt',classnum)
+            word_codes = ''
+            words_found=0
 
-        #may not use all the available words in a header. include
-        #as many as the preamble records tell you are used
-        while words_found < nwords:
-            jj=1 #number of steps in the format string
-            new_code = format_string[len(word_codes):len(word_codes)+jj]
+            #may not use all the available words in a header. include
+            #as many as the preamble records tell you are used
+            while words_found < nwords:
+                jj=1 #number of steps in the format string
+                new_code = format_string[len(word_codes):len(word_codes)+jj]
 
-            #double strings are one character 'd'
-            #character strings are either '8s','16s','24s', etc.
-            while new_code[-1].isdigit() is True:
-                jj += 1
-                new_code=format_string[len(word_codes):len(word_codes)+jj]
-            if new_code[0].isdigit():
-                #get the numbers from the new code and calc # of words
-                new_words_found = int(filter(str.isdigit,new_code))/8
-            else:
-                new_words_found = 1
-            word_codes  += new_code
-            words_found += new_words_found
+                #double strings are one character 'd'
+                #character strings are either '8s','16s','24s', etc.
+                while new_code[-1].isdigit() is True:
+                    jj += 1
+                    new_code=format_string[len(word_codes):len(word_codes)+jj]
+                if new_code[0].isdigit():
+                    #get the numbers from the new code and calc # of words
+                    new_words_found = int(filter(str.isdigit,new_code))/8
+                else:
+                    new_words_found = 1
+                word_codes  += new_code
+                words_found += new_words_found
 
-        res = unpack(word_codes,content[start:start+8*(nwords)])
-        key_dict = self.get_key_dict('smt',classnum)
-        for ii in range(len(res)):  
-            self.header[key_dict[ii]] = res[ii]
+            res = unpack(word_codes,content[startbyte:startbyte+8*(nwords)])
+            key_dict = self.get_key_dict('smt',classnum)
+            for jj in range(len(res)):  
+                self.header[key_dict[jj]] = res[jj]
 
+    def unpack_data(self,start,content):
+        """
+        Data to read in the information about the scan from header and then
+        read from content starting at the start byte to get the data into the
+        sddscan object.
+        """
+        header = self.header
+        hlen = int(header['headlen'])
+        dlen = int(header['datalen'])
+        ndataword = dlen/4
+        startbyte = start+hlen
+        stopbyte = startbyte+dlen
+        res = unpack('f'*ndataword,content[startbyte:stopbyte])
+        self.data = np.asarray(res)
+        
     def get_format_string(self,telescope,classnum):
+        """
+        The header has a set format in the format doc. For a telescope
+        string, will return the header format string to read in the data.
+        Currently only 'smt' is supported for telescope.
+        """
         if telescope=='smt':
             format_string =  \
                 [ 'ddd8s16s8s8s16s8s8s8s8sddd', \
