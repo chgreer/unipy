@@ -27,10 +27,9 @@ Example script:
     ii = 2319
 
 	print "Bootstrap:"
-	print "----------"
 	print "Number of records:\t",info.bootstrap.numrec
 	print "Number of data records:\t",info.bootstrap.numdata
-	print "etc....
+	print "etc...."
 	print ""
 	print "Index:\t",ii
 	print "start_rec\t",info.index[ii].start_rec
@@ -48,4 +47,17 @@ Example script:
     	print '{0:4d} {1:6.2f} {2:02d} {3:02d} {4:04.1f} {5:8s} {6:8s}'\
 			.format(jj,scan,int(hr),int(mn),sc,src,scantyp)
 	
+Example Script Output:
 
+	Bootstrap:
+	Number of records:	2049
+	Number of data records:	11872
+	etc....
+	
+	Index:	2319
+	start_rec	13912
+	stop_rec	13921
+	etc....
+	
+	2318 3363.03 16 52 57.9 BLLAC            CONTVLBI
+	2319 3363.04 16 52 57.9 BLLAC            CONTVLBI
