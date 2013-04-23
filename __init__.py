@@ -37,12 +37,12 @@ class sddfile:
         #preamble 32 bytes of data followed by zeros to length of one record
         #header and datalength are contained in the header
         for ii in range(self.bootstrap.num_used):
-            start = (self.index[i].start_rec-1)*self.bootstrap.bytes_per_rec
+            start = (self.index[ii].start_rec-1)*self.bootstrap.bytes_per_rec
             stop =  start+32
             res = unpack('h'*16,self.content[start:stop])
             self.scans.append(sddscan(res))
-            self.scans[i].unpack_header(start,self.content)
-            self.scans[i].unpack_data(start,self.content)
+            self.scans[ii].unpack_header(start,self.content)
+            self.scans[ii].unpack_data(start,self.content)
         
 class sddbootstrap:
     """
