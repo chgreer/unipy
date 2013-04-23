@@ -6,11 +6,15 @@ read them into python.
 
 The resulting sddfile object contains members:
 
-1. A bootstrap object: sddfile.bootstrap
-2. A list of index objects: sddfile.index[numrec]
-3. A list of scans, each with a header dict and numpy data array: 
+1. A bootstrap object containing fundamental info about the sdd file.
+	*sddfile.bootstrap
+2. A list of index objects with numrec elements with crucial information about
+each scan.
+	*sddfile.index[numrec]
+3. A list of scans, each with a header dict and numpy data array. The data
+array can have multiple words of data for each scan. 
 	* sddfile.scans[numrec].header{key} 
-	* sddfile.scans[numrec].data[]
+	* sddfile.scans[numrec].data[ndataword]
 
 Example script:
 
