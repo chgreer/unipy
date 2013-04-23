@@ -58,7 +58,7 @@ class sddbootstrap:
         self.sddtyp = tup[6]
         self.sddver = tup[7]
         pad_size = (self.bytes_per_rec - 32)/4;
-        self.pad = unpack("i" * pad_size,content[32:self.bytes_per_rec])
+        #self.pad = unpack("i" * pad_size,content[32:self.bytes_per_rec])
 
 class sddindex:
     """

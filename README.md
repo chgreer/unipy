@@ -1,4 +1,4 @@
-uniPY
+unipy
 =======
 
 Code to take Unipops (http://www.cv.nrao.edu/unipops/) SDD files and 
@@ -21,7 +21,7 @@ Example script:
     #!/usr/bin/python
     import unipy as upy
 
-    fn='uniPY/rogers_2012/sdd.gbc_002'
+    fn='unipy/rogers_2012/sdd.gbc_002'
 
     info = upy.sddfile(fn,'smt')
     ii = 2319
