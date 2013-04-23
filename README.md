@@ -9,8 +9,8 @@ The resulting sddfile object contains members:
 1. A bootstrap object: sddfile.bootstrap
 2. A list of index objects: sddfile.index[numrec]
 3. A list of scans, each with a header dict and numpy data array: 
-	**sddfile.scans[numrec].header{key} 
-	**sddfile.scans[numrec].data[]
+	** sddfile.scans[numrec].header{key} 
+	** sddfile.scans[numrec].data[]
 
 Example script:
 
